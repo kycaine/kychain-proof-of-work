@@ -4,12 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type Block struct {
@@ -19,16 +14,23 @@ type Block struct {
 	PreviousHash string
 	Hash         string
 	Nonce        int
+	Difficulty   int
 }
 
-func NewBlock(transactions []Transaction, previousHash string) *Block {
+func NewBlock(transactions []Transaction, previousBlock *Block) *Block {
+	startTime := time.Now()
+
+	difficulty := AdjustDifficulty(*previousBlock, startTime)
+
 	block := &Block{
-		Index:        0,
+		Index:        previousBlock.Index + 1,
 		Timestamp:    time.Now().String(),
 		Transactions: transactions,
-		PreviousHash: previousHash,
+		PreviousHash: previousBlock.Hash,
+		Difficulty:   difficulty,
 	}
-	block.Mine(getDifficulty())
+
+	block.Mine(difficulty)
 	return block
 }
 
@@ -37,16 +39,15 @@ func (b *Block) calculateHash() string {
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
-func getDifficulty() int {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
-	difficultyStr := os.Getenv("DIFFICULTY")
-	difficulty, err := strconv.Atoi(difficultyStr)
-	if err != nil {
-		difficulty = 2
+func AdjustDifficulty(previousBlock Block, startTime time.Time) int {
+	targetTime := 10
+	elapsedTime := int(time.Since(startTime).Seconds())
+
+	if elapsedTime < targetTime {
+		return previousBlock.Difficulty + 1
+	} else if elapsedTime > targetTime {
+		return previousBlock.Difficulty - 1
 	}
-	return difficulty
+	return previousBlock.Difficulty
 }
