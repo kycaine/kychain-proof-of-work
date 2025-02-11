@@ -31,7 +31,9 @@ func AddTransactionHandler(c *gin.Context) {
 }
 
 func MineBlockHandler(c *gin.Context) {
-	newBlock := bc.MineBlock()
+	address := c.Param("address")
+
+	newBlock := bc.MineBlock(address)
 	if newBlock == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No transactions to mine!"})
 		return

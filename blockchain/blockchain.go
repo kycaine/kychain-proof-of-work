@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -41,28 +42,41 @@ func (bc *Blockchain) AddTransaction(sender, recipient string, amount float64, m
 	totalCost := amount + fee
 
 	if balance < totalCost {
-		fmt.Println("Transaksi gagal: saldo tidak mencukupi")
+		fmt.Println("Transaction failed: not enough balance")
 		return false
 	}
 
 	tx := NewTransaction(sender, recipient, amount, message)
 
 	bc.Mempool = append(bc.Mempool, *tx)
-	fmt.Println("Transaksi ditambahkan ke mempool!")
+	fmt.Println("Transaction added to mempool!")
 	return true
 }
 
-func (bc *Blockchain) MineBlock() *Block {
+func (bc *Blockchain) MineBlock(minerAddress string) *Block {
 	if len(bc.Mempool) == 0 {
 		fmt.Println("Mempool is empty, there are no transactions to mine.")
 		return nil
 	}
 
 	previousBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := NewBlock(bc.Mempool, previousBlock)
 
+	rewardTx := Transaction{
+		ID:        "reward-" + fmt.Sprint(len(bc.Blocks)),
+		Sender:    "mining-reward",
+		Recipient: minerAddress,
+		Amount:    GetBlockReward(len(bc.Blocks)),
+		Fee:       0,
+		Timestamp: time.Now().Format(time.RFC3339),
+		Message:   "Block mining reward",
+	}
+
+	transactions := append([]Transaction{rewardTx}, bc.Mempool...)
+
+	newBlock := NewBlock(transactions, previousBlock)
 	newBlock.Index = len(bc.Blocks)
 	bc.Blocks = append(bc.Blocks, newBlock)
+
 	bc.Mempool = []Transaction{}
 
 	fmt.Println("Block mined successfully:", newBlock.Hash)
@@ -83,4 +97,14 @@ func (bc *Blockchain) GetBalance(address string) float64 {
 		}
 	}
 	return balance
+}
+
+func GetBlockReward(blockHeight int) float64 {
+	baseReward := 50.0
+	halvingInterval := 100
+
+	halvings := blockHeight / halvingInterval
+	reward := baseReward / math.Pow(2, float64(halvings))
+
+	return reward
 }

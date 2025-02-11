@@ -7,7 +7,7 @@ func SetupRouter() *gin.Engine {
 
 	route.GET("/blockchain", GetBlockchainHandler)
 	route.POST("/transaction", AddTransactionHandler)
-	route.GET("/mine", MineBlockHandler)
+	route.POST("/mine/:address", MineBlockHandler)
 	route.GET("/balance/:address", GetBalanceHandler)
 
 	return route
