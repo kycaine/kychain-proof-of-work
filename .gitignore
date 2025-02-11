@@ -1,0 +1,34 @@
+# Binary files
+*.exe
+*.out
+*.test
+*.bin
+
+# Dependency directories
+vendor/
+bin/
+obj/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Golang specific
+/go/
+*.log
+*.swp
+
+# IDE / Editor settings
+.idea/
+.vscode/
+*.iml
+
+# Go modules
+go.sum
+go.mod
+
+# Temporary files
+*.tmp
+*.temp
+
+.env
