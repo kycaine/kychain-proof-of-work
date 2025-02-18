@@ -1,8 +1,11 @@
 package blockchain
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"time"
 )
 
@@ -10,6 +13,7 @@ type Blockchain struct {
 	Blocks  []*Block
 	Mempool []Transaction
 	Wallets map[string]*Wallet
+	Nodes   []string
 }
 
 func NewBlockchain() *Blockchain {
@@ -100,11 +104,30 @@ func (bc *Blockchain) GetBalance(address string) float64 {
 }
 
 func GetBlockReward(blockHeight int) float64 {
-	baseReward := 50.0
-	halvingInterval := 100
+	baseReward := 100.0
+	halvingInterval := 1000
 
 	halvings := blockHeight / halvingInterval
 	reward := baseReward / math.Pow(2, float64(halvings))
 
 	return reward
+}
+
+func (bc *Blockchain) RegisterNode(address string) {
+	for _, node := range bc.Nodes {
+		if node == address {
+			fmt.Println("Node already exists!")
+			return
+		}
+	}
+	bc.Nodes = append(bc.Nodes, address)
+	fmt.Println("Node registered:", address)
+}
+
+func (bc *Blockchain) BroadcastBlock(block Block) {
+	for _, node := range bc.Nodes {
+		url := node + "/receive_block"
+		jsonBlock, _ := json.Marshal(block)
+		http.Post(url, "application/json", bytes.NewBuffer(jsonBlock))
+	}
 }

@@ -13,8 +13,10 @@ This is a simple Proof of Work (PoW) blockchain implementation with basic functi
 2. Mining
 
 - The mining process records transactions from the mempool into a new block.
-- The time required for mining depends on the number of existing blocks in the blockchain.
+- The time required for mining +- 5 minutes.
 - Once mined, the block is added to the blockchain.
+- miner will get 100 reward if successfully mining the block
+- reward wll decrease 50% every 1000 block created
 
 3. Get Blockchain
 
@@ -26,7 +28,7 @@ This is a simple Proof of Work (PoW) blockchain implementation with basic functi
 | Endpoint            | Method | Description                                    |
 | ------------------- | ------ | ---------------------------------------------- |
 | `/transaction`      | POST   | Add a new transaction to the mempool.          |
-| `/mine`             | GET    | Mine a new block and add it to the blockchain. |
+| `/mine/:address`    | GET    | Mine a new block and add it to the blockchain. |
 | `/blockchain`       | GET    | Retrieve the entire blockchain.                |
 | `/balance/:address` | GET    | Retrieve balance by address.                   |
 

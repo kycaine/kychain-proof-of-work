@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -41,7 +42,7 @@ func (b *Block) calculateHash() string {
 }
 
 func AdjustDifficulty(previousBlock Block, startTime time.Time) int {
-	targetTime := 10
+	targetTime := 300
 	elapsedTime := int(time.Since(startTime).Seconds())
 
 	if elapsedTime < targetTime {
@@ -50,4 +51,9 @@ func AdjustDifficulty(previousBlock Block, startTime time.Time) int {
 		return previousBlock.Difficulty - 1
 	}
 	return previousBlock.Difficulty
+}
+
+func (b *Block) IsValidProof() bool {
+	hash := b.calculateHash()
+	return strings.HasPrefix(hash, "0000")
 }
