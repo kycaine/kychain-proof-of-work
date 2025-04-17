@@ -32,19 +32,18 @@ func AddTransactionHandler(c *gin.Context) {
 
 func MineBlockHandler(c *gin.Context) {
 	address := c.Param("address")
-
-	if len(BC.Mempool) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No transactions to mine"})
+	if address == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Address required"})
 		return
 	}
 
-	newBlock := BC.MineBlock(address)
-	BC.BroadcastBlock(*newBlock)
+	block := BC.MineBlock(address)
+	if block == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mine block"})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Block mined successfully",
-		"block":   newBlock,
-	})
+	c.JSON(http.StatusOK, block)
 }
 
 func GetBalanceHandler(c *gin.Context) {

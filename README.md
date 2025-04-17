@@ -39,3 +39,22 @@ Users create transactions that are temporarily stored in the mempool.
 Mining processes these transactions, groups them into a block, and adds the block to the blockchain.
 
 Users can retrieve the blockchain to check the number of blocks and stored transactions.
+
+# Project structure
+
+📁proof-of-work/
+├── 📁 blockchain/
+│ ├── block.go
+│ ├── blockchain.go
+│ ├── pow.go
+│ ├── transaction.go
+│ └── wallet.go
+│
+├── 📁 server/
+│ ├── handler.go
+│ └── router.go
+│
+├── .env
+├── go.mod
+├── main.go
+└── README.md

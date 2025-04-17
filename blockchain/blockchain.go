@@ -58,11 +58,6 @@ func (bc *Blockchain) AddTransaction(sender, recipient string, amount float64, m
 }
 
 func (bc *Blockchain) MineBlock(minerAddress string) *Block {
-	if len(bc.Mempool) == 0 {
-		fmt.Println("Mempool is empty, there are no transactions to mine.")
-		return nil
-	}
-
 	previousBlock := bc.Blocks[len(bc.Blocks)-1]
 
 	rewardTx := Transaction{
@@ -72,7 +67,7 @@ func (bc *Blockchain) MineBlock(minerAddress string) *Block {
 		Amount:    GetBlockReward(len(bc.Blocks)),
 		Fee:       0,
 		Timestamp: time.Now().Format(time.RFC3339),
-		Message:   "Block mining reward",
+		Message:   "Block reward",
 	}
 
 	transactions := append([]Transaction{rewardTx}, bc.Mempool...)
@@ -82,8 +77,8 @@ func (bc *Blockchain) MineBlock(minerAddress string) *Block {
 	bc.Blocks = append(bc.Blocks, newBlock)
 
 	bc.Mempool = []Transaction{}
-
 	fmt.Println("Block mined successfully:", newBlock.Hash)
+
 	return newBlock
 }
 
