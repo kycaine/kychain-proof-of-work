@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -75,9 +76,11 @@ func (bc *Blockchain) MineBlock(minerAddress string) *Block {
 	newBlock := NewBlock(transactions, previousBlock)
 	newBlock.Index = len(bc.Blocks)
 	bc.Blocks = append(bc.Blocks, newBlock)
+	bc.CleanMempool(transactions)
 
-	bc.Mempool = []Transaction{}
 	fmt.Println("Block mined successfully:", newBlock.Hash)
+
+	bc.BroadcastBlock(*newBlock)
 
 	return newBlock
 }
@@ -122,7 +125,114 @@ func (bc *Blockchain) RegisterNode(address string) {
 func (bc *Blockchain) BroadcastBlock(block Block) {
 	for _, node := range bc.Nodes {
 		url := node + "/receive_block"
-		jsonBlock, _ := json.Marshal(block)
-		http.Post(url, "application/json", bytes.NewBuffer(jsonBlock))
+		jsonBlock, err := json.Marshal(block)
+		if err != nil {
+			fmt.Println("Error marshalling block:", err)
+			continue
+		}
+
+		// asynchronus
+		go func(nodeURL string, blockData []byte) {
+			resp, err := http.Post(nodeURL, "application/json", bytes.NewBuffer(blockData))
+			if err != nil {
+				fmt.Println("Failed to broadcast to node:", nodeURL, "Error:", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode >= 400 {
+				fmt.Println("Node rejected block:", nodeURL, "Status:", resp.Status)
+			}
+		}(url, jsonBlock)
 	}
+
+	fmt.Println("Block broadcast initiated to", len(bc.Nodes), "nodes")
+}
+
+func (bc *Blockchain) IsChainValid() bool {
+	if len(bc.Blocks) == 1 {
+		return true
+	}
+
+	for i := 1; i < len(bc.Blocks); i++ {
+		currentBlock := bc.Blocks[i]
+		previousBlock := bc.Blocks[i-1]
+
+		if currentBlock.Hash != currentBlock.CalculateHash() {
+			fmt.Println("Invalid hash for block", currentBlock.Index)
+			return false
+		}
+
+		if currentBlock.PreviousHash != previousBlock.Hash {
+			fmt.Println("Block", currentBlock.Index, "has invalid previous hash reference")
+			return false
+		}
+
+		prefix := strings.Repeat("0", currentBlock.Difficulty)
+		if !strings.HasPrefix(currentBlock.Hash, prefix) {
+			fmt.Println("Block", currentBlock.Index, "has invalid proof of work")
+			return false
+		}
+
+		if currentBlock.Index != previousBlock.Index+1 {
+			fmt.Println("Block", currentBlock.Index, "has invalid index sequence")
+			return false
+		}
+	}
+
+	bc.ValidateTransactions()
+
+	return true
+}
+
+func (bc *Blockchain) ValidateTransactions() bool {
+	balances := make(map[string]float64)
+
+	for _, tx := range bc.Blocks[0].Transactions {
+		if tx.Recipient != "" {
+			balances[tx.Recipient] += tx.Amount
+		}
+	}
+
+	for i := 1; i < len(bc.Blocks); i++ {
+		block := bc.Blocks[i]
+
+		for _, tx := range block.Transactions {
+			if tx.Sender == "mining-reward" {
+				balances[tx.Recipient] += tx.Amount
+				continue
+			}
+
+			if balances[tx.Sender] < (tx.Amount + tx.Fee) {
+				fmt.Println("Invalid transaction in block", block.Index, "- insufficient funds")
+				return false
+			}
+
+			balances[tx.Sender] -= (tx.Amount + tx.Fee)
+			balances[tx.Recipient] += tx.Amount
+		}
+	}
+
+	return true
+}
+
+func (bc *Blockchain) CleanMempool(blockTransactions []Transaction) {
+	var newMempool []Transaction
+
+	for _, mempoolTx := range bc.Mempool {
+		found := false
+
+		for _, blockTx := range blockTransactions {
+			if mempoolTx.ID == blockTx.ID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			newMempool = append(newMempool, mempoolTx)
+		}
+	}
+
+	bc.Mempool = newMempool
 }

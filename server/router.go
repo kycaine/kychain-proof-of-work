@@ -13,7 +13,6 @@ func SetupRouter() *gin.Engine {
 	route.GET("/mine/:address", MineBlockHandler)
 	route.GET("/balance/:address", GetBalanceHandler)
 	route.POST("/register_node", RegisterNodeHandler)
-	route.POST("/receive_block", ReceiveBlock)
 
 	return route
 }
